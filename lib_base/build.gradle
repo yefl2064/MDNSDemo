@@ -1,0 +1,66 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
+
+    resourcePrefix "base_"
+
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation 'junit:junit:4.12'
+    api rootProject.ext.dependencies["appcompat-v7"]
+    api rootProject.ext.dependencies["support-v4"]
+    api rootProject.ext.dependencies["design"]
+    api rootProject.ext.dependencies["androideventbus"]
+    api(rootProject.ext.dependencies["arouter"]) {
+        exclude module: 'support-v4'
+        exclude module: 'support-annotations'
+        exclude module: 'design'
+    }
+    api rootProject.ext.dependencies["BRVAH"]
+    api rootProject.ext.dependencies["PictureSelector"]
+    api rootProject.ext.dependencies["utilcode"]
+    api rootProject.ext.dependencies["qmui"]
+    api rootProject.ext.dependencies["glide"]
+    api rootProject.ext.dependencies["multidex"]
+    api rootProject.ext.dependencies["retrofit-url-manager"]
+    api rootProject.ext.dependencies["retrofit"]
+    api rootProject.ext.dependencies["retrofit-converter-gson"]
+    api rootProject.ext.dependencies["rxpermissions"]
+    api rootProject.ext.dependencies["converter-scalars"]
+    api rootProject.ext.dependencies["logging-interceptor"]
+    api rootProject.ext.dependencies["autosize"]
+    api rootProject.ext.dependencies["progressmanager"]
+    api rootProject.ext.dependencies["constraintlayout"]
+    api rootProject.ext.dependencies["lifecycle-extensions"]
+    api rootProject.ext.dependencies["room"]
+    api rootProject.ext.dependencies["bugly_crashreport_upgrade"]
+    api rootProject.ext.dependencies["bugly_nativecrashreport"]
+
+    api "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+}

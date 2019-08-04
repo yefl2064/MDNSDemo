@@ -1,0 +1,33 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="base_AppTheme" parent="QMUI.Compat.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/base_colorPrimary</item>
+        <item name="colorPrimaryDark">@color/base_colorPrimaryDark</item>
+        <item name="colorAccent">@color/base_colorAccent</item>
+        <item name="android:windowAnimationStyle">@style/base_Animation_Activity</item>
+        <item name="qmui_config_color_blue">@color/base_colorPrimary</item>
+        <item name="qmui_topbar_title_color">@color/qmui_config_color_white</item>
+        <item name="QMUITopBarStyle">@style/base_QDTopBar</item>
+    </style>
+
+    <style name="base_QDTopBar" parent="QMUI.TopBar">
+        <item name="qmui_topbar_bg_color">@color/base_colorPrimary</item>
+
+    </style>
+
+    <style name="base_Animation_Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/base_translate_right_to_center</item>
+        <item name="android:activityOpenExitAnimation">@anim/base_translate_center_to_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/base_translate_left_to_center</item>
+        <item name="android:activityCloseExitAnimation">@anim/base_translate_center_to_right</item>
+    </style>
+
+    <!--分割线-->
+    <style name="base_item_line">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0.5px</item>
+        <item name="background">@color/base_line_background</item>
+    </style>
+
+</resources>
