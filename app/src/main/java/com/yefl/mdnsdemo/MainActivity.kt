@@ -81,6 +81,11 @@ class MainActivity: BaseActivity() {
 
     val discoveryListener: NsdManager.DiscoveryListener = object: NsdManager.DiscoveryListener {
         override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
+            for(info in nsdinfoList){
+                if(info.serviceName.equals(serviceInfo?.serviceName)){
+                    return
+                }
+            }
             nsdinfoList.add(serviceInfo!!)
             ThreadExecutors.mainThread.execute{
                 nsdAdapter?.notifyDataSetChanged()
