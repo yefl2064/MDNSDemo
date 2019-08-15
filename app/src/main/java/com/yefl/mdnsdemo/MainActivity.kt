@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdManager.RegistrationListener
 import android.net.nsd.NsdServiceInfo
+import android.os.Handler
 import android.util.Log
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,7 +41,8 @@ class MainActivity: BaseActivity() {
         }
 
         btn_scan.setOnClickListener {
-            doDiscovery()
+            nsdmanager.stopServiceDiscovery(discoveryListener)
+            Handler().postDelayed(Runnable { doDiscovery() }, 5000)
         }
 
         btn_stop.setOnClickListener {
@@ -49,17 +51,17 @@ class MainActivity: BaseActivity() {
     }
 
     override fun initData() {
-        val nsdServiceInfo = NsdServiceInfo()
-        nsdServiceInfo.serviceName = "1234"
-        nsdServiceInfo.serviceType = "_ipp._tcp."
-        nsdServiceInfo.port = 631
-        nsdmanager.registerService(nsdServiceInfo, NsdManager.PROTOCOL_DNS_SD, nsRegListener)
-
+//        val nsdServiceInfo = NsdServiceInfo()
+//        nsdServiceInfo.serviceName = "1234"
+//        nsdServiceInfo.serviceType = "_ipp._tcp."
+//        nsdServiceInfo.port = 631
+//        nsdmanager.registerService(nsdServiceInfo, NsdManager.PROTOCOL_DNS_SD, nsRegListener)
         doDiscovery()
     }
 
     private fun doDiscovery(){
         nsdinfoList.clear()
+        nsdAdapter?.notifyDataSetChanged()
         nsdmanager.discoverServices("_ipp._tcp.", NsdManager.PROTOCOL_DNS_SD, discoveryListener)
     }
 
@@ -81,6 +83,7 @@ class MainActivity: BaseActivity() {
 
     val discoveryListener: NsdManager.DiscoveryListener = object: NsdManager.DiscoveryListener {
         override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
+            LogUtils.d("onServiceFound--->"+serviceInfo)
             for(info in nsdinfoList){
                 if(info.serviceName.equals(serviceInfo?.serviceName)){
                     return
@@ -90,22 +93,35 @@ class MainActivity: BaseActivity() {
             ThreadExecutors.mainThread.execute{
                 nsdAdapter?.notifyDataSetChanged()
             }
-            LogUtils.d(serviceInfo)
         }
 
         override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
+            LogUtils.d("onStopDiscoveryFailed, errCode =="+errorCode)
         }
 
         override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
+            LogUtils.d("onStartDiscoveryFailed, errCode =="+errorCode)
         }
 
         override fun onDiscoveryStarted(serviceType: String?) {
+            LogUtils.d("onDiscoveryStarted")
         }
 
         override fun onDiscoveryStopped(serviceType: String?) {
+            LogUtils.d("onDiscoveryStopped")
         }
 
         override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
+            LogUtils.d("onServiceLost--->"+serviceInfo)
+            for(info in nsdinfoList){
+                if(info.serviceName.equals(serviceInfo?.serviceName)){
+                    nsdinfoList.remove(serviceInfo!!)
+                    ThreadExecutors.mainThread.execute{
+                        nsdAdapter?.notifyDataSetChanged()
+                    }
+                }
+            }
+
         }
 
     }
