@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.blankj.utilcode.util.LogUtils
+import com.blankj.utilcode.util.ToastUtils
 import com.coolweather.coolweatherjetpack.util.ThreadExecutors
 import com.hprt.lib_base.base.BaseActivity
 import kotlinx.android.synthetic.main.activity_main.*
@@ -27,6 +28,8 @@ class MainActivity: BaseActivity() {
 
     var nsdAdapter:NsdServiceInfoAdapter?=null
 
+    var isScaning = false;
+
 
     override fun initView() {
         nsdmanager =  applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
@@ -41,28 +44,76 @@ class MainActivity: BaseActivity() {
         }
 
         btn_scan.setOnClickListener {
-            nsdmanager.stopServiceDiscovery(discoveryListener)
-            Handler().postDelayed(Runnable { doDiscovery() }, 5000)
+            stop()
+            if(!isScaning) {
+                doDiscovery()
+            }else{
+                ToastUtils.showShort("上次搜索未释放,稍后再试")
+            }
         }
 
         btn_stop.setOnClickListener {
-            nsdmanager.stopServiceDiscovery(discoveryListener)
+            stop()
         }
     }
 
     override fun initData() {
-//        val nsdServiceInfo = NsdServiceInfo()
-//        nsdServiceInfo.serviceName = "1234"
-//        nsdServiceInfo.serviceType = "_ipp._tcp."
-//        nsdServiceInfo.port = 631
-//        nsdmanager.registerService(nsdServiceInfo, NsdManager.PROTOCOL_DNS_SD, nsRegListener)
-        doDiscovery()
+
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if(!isScaning)
+            doDiscovery()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stop();
+    }
+
+    override fun onDestroy() {
+        stop()
+        isScaning = false
+        super.onDestroy()
     }
 
     private fun doDiscovery(){
         nsdinfoList.clear()
         nsdAdapter?.notifyDataSetChanged()
-        nsdmanager.discoverServices("_ipp._tcp.", NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+        try {
+            nsdmanager.discoverServices("_ipp._tcp.", NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+        }catch (e:java.lang.Exception){
+            e.printStackTrace()
+        }
+
+
+        val nsdServiceInfo = NsdServiceInfo()
+        nsdServiceInfo.serviceName = "1234"
+        nsdServiceInfo.serviceType = "_ipp._tcp."
+        nsdServiceInfo.port = 631
+        try {
+            nsdmanager.registerService(nsdServiceInfo, NsdManager.PROTOCOL_DNS_SD, nsRegListener)
+        }catch (e:java.lang.Exception){
+            e.printStackTrace()
+        }
+    }
+
+
+    fun stop(){
+        try {
+            if (isScaning) {
+                nsdmanager.stopServiceDiscovery(discoveryListener)
+            }
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
+        try {
+            nsdmanager.unregisterService(nsRegListener)
+        }catch (e:java.lang.Exception){
+            e.printStackTrace()
+        }
     }
 
     val nsRegListener: RegistrationListener = object:RegistrationListener{
@@ -97,22 +148,33 @@ class MainActivity: BaseActivity() {
 
         override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
             LogUtils.d("onStopDiscoveryFailed, errCode =="+errorCode)
+            LogUtils.file("onStopDiscoveryFailed, errCode =="+errorCode)
+            ThreadExecutors.mainThread.execute { tv_status.setText("onStopDiscoveryFailed...errCode =="+errorCode) }
         }
 
         override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
             LogUtils.d("onStartDiscoveryFailed, errCode =="+errorCode)
+            LogUtils.file("onStartDiscoveryFailed, errCode =="+errorCode)
+            ThreadExecutors.mainThread.execute { tv_status.setText("onStartDiscoveryFailed...errCode =="+errorCode) }
         }
 
         override fun onDiscoveryStarted(serviceType: String?) {
             LogUtils.d("onDiscoveryStarted")
+            LogUtils.file("onDiscoveryStarted")
+            isScaning = true
+            ThreadExecutors.mainThread.execute { tv_status.setText("开始搜索...") }
         }
 
         override fun onDiscoveryStopped(serviceType: String?) {
             LogUtils.d("onDiscoveryStopped")
+            LogUtils.file("onDiscoveryStopped")
+            isScaning = false;
+            ThreadExecutors.mainThread.execute { tv_status.setText("停止搜索...") }
         }
 
         override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
             LogUtils.d("onServiceLost--->"+serviceInfo)
+            LogUtils.file("onServiceLost--->"+serviceInfo)
             for(info in nsdinfoList){
                 if(info.serviceName.equals(serviceInfo?.serviceName)){
                     nsdinfoList.remove(serviceInfo!!)
