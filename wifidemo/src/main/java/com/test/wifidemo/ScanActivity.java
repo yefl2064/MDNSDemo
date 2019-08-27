@@ -5,9 +5,12 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
+import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
@@ -34,6 +37,7 @@ import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -66,8 +70,10 @@ public class ScanActivity extends BaseActivity implements QRCodeView.Delegate, W
         mWifiAutoConnectManager = new WifiAutoConnectManager(mContext.getApplicationContext(), this);
         mZXingView.setDelegate(ScanActivity.this);
         mZXingView.getScanBoxView().setOnlyDecodeScanBoxArea(false);
-        String ssid = getConnectWifiSsid();
-        YLog.d(ssid);
+        isWifi();
+//        String ssid = getConnectWifiSsid();
+//        YLog.d(ssid);
+//        getWIFIName(this);
     }
 
     @Override
@@ -88,6 +94,7 @@ public class ScanActivity extends BaseActivity implements QRCodeView.Delegate, W
                         Manifest.permission.CHANGE_WIFI_STATE,
                         Manifest.permission.ACCESS_WIFI_STATE,
                         Manifest.permission.ACCESS_NETWORK_STATE,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.VIBRATE)
                 .subscribe(new Observer<Boolean>() {
                     @Override
@@ -270,11 +277,27 @@ public class ScanActivity extends BaseActivity implements QRCodeView.Delegate, W
 
     public boolean isWifi(){
         ConnectivityManager manager = (ConnectivityManager) getAct().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo.State wifi = manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState();
-        if (wifi == NetworkInfo.State.CONNECTED || wifi == NetworkInfo.State.CONNECTING) {
-            return true;
-        }else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {//android 8.0以上
+            WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            int networkId = wifiInfo.getNetworkId();
+            if(networkId == -1){
+                return false;
+            }
+            List<WifiConfiguration> configuredNetworks = wifiManager.getConfiguredNetworks();
+            for (WifiConfiguration wifiConfiguration:configuredNetworks){
+                if (wifiConfiguration.networkId==networkId){
+                    return true;
+                }
+            }
             return false;
+        }else{
+            NetworkInfo.State wifi = manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState();
+            if (wifi == NetworkInfo.State.CONNECTED || wifi == NetworkInfo.State.CONNECTING) {
+                return true;
+            }else {
+                return false;
+            }
         }
     }
 
@@ -386,24 +409,45 @@ public class ScanActivity extends BaseActivity implements QRCodeView.Delegate, W
     }
 
     private String getConnectWifiSsid(){
-
         ConnectivityManager ctm = (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = ctm.getActiveNetworkInfo();
         String ssid = networkInfo.getExtraInfo();
-
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        NetworkInfo wifiNetworkInfo = ctm
+                .getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (wifiNetworkInfo.isConnected()) {
+            YLog.d("connect");
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ctm.getAllNetworks();
+        }
+
+
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        if(wifiInfo != null && wifiInfo.getSSID().length()>2) {
-            return wifiInfo.getSSID().substring(1, wifiInfo.getSSID().length()-1);
+
+        ssid = wifiInfo.getSSID();
+        int networkId = wifiInfo.getNetworkId();
+        List<WifiConfiguration> configuredNetworks = wifiManager.getConfiguredNetworks();
+        for (WifiConfiguration wifiConfiguration:configuredNetworks){
+            if (wifiConfiguration.networkId==networkId){
+                ssid=wifiConfiguration.SSID;
+                break;
+            }
+        }
+        if(ssid != null && ssid.length()>2) {
+            return ssid.substring(1, ssid.length()-1);
         }else{
             return "";
         }
-
     }
+
+    public static String getWIFIName(Context context) {
+        WifiManager wifiMgr = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        int wifiState = wifiMgr.getWifiState();
+        WifiInfo info = wifiMgr.getConnectionInfo();
+        String wifiId = info != null ? info.getSSID().replace("\"", "") : null;
+        return wifiId;
+    }
+
 
 }
