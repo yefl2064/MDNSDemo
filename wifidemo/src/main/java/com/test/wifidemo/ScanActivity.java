@@ -404,8 +404,6 @@ public class ScanActivity extends BaseActivity implements QRCodeView.Delegate, W
             return "";
         }
 
-        NetworkUtils.isWifiConnected()
-
     }
 
 }
